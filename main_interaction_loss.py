@@ -15,7 +15,7 @@ parser.add_argument(
     "--adv_image_root", type=str, default='./experiments/adv_images')
 parser.add_argument("--clean_image_root", type=str, default='data/images_1000')
 parser.add_argument("--gpu", type=int, default=0)
-parser.add_argument("--arch", type=str, default='resnet34')
+parser.add_argument("--arch", type=str, default='resnet50')
 parser.add_argument(
     "--target_archs", type=str, default=['densenet201'], nargs='*')
 
@@ -29,6 +29,8 @@ parser.add_argument("--lam", type=float, default=0.)
 parser.add_argument("--grid_scale", type=int, default=16)
 parser.add_argument("--sample_grid_num", type=int, default=32)
 parser.add_argument("--sample_times", type=int, default=32)
+parser.add_argument("--image_resize", type=int, default=255)
+parser.add_argument("--prob", type=float, default=0.)
 args = parser.parse_args()
 
 target_archs = [
@@ -37,7 +39,7 @@ target_archs = [
 ]
 
 
-def test_interaction_reduced_attack():
+def ttest_interaction_reduced_attack():
     set_config(args)
     interaction_reduced_attack.generate_adv_images(args)
     for target_arch in target_archs:
@@ -46,4 +48,4 @@ def test_interaction_reduced_attack():
         leave_one_out.evaluate(args)
 
 
-test_interaction_reduced_attack()
+ttest_interaction_reduced_attack()
