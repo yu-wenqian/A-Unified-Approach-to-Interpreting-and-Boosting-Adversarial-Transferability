@@ -24,6 +24,8 @@ def get_attacker(
     ti_size=1,
     m=0,
     sigma=15,
+    image_resize = 255,
+    prob = 0.,
 ):
 
     if ('SGM' in attack_method or 'Hybrid' in attack_method) and gamma > 1:
@@ -79,5 +81,7 @@ def get_attacker(
         sample_grid_num=sample_grid_num,
         m=m,
         sigma=sigma,
+        image_resize =image_resize,
+        prob = prob,
         ord=p)
     return adversary
