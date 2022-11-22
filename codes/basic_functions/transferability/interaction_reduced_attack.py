@@ -23,7 +23,8 @@ def generate_adv_images(args):
 
     height, width = model.input_size[1], model.input_size[2]
     mean, std = model.mean, model.std
-    device = torch.device(f'cuda:{args.gpu}')
+    #device = torch.device(f'cuda:{args.gpu}')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     predict = nn.Sequential(Normalize(mean=mean, std=std), model).to(device)
 
     ori_dataloader, _ = load_images(
@@ -50,6 +51,8 @@ def generate_adv_images(args):
         image_size=height,
         sample_grid_num=args.sample_grid_num,
         sample_times=args.sample_times,
+        image_resize = args.image_resize,
+        prob = args.prob,
     )
 
     save_root = args.adv_image_root
