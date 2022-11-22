@@ -7,6 +7,11 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+from random import randint
+
+from torchvision import transforms
+from PIL import Image
+
 from ..utils import clamp, normalize_by_pnorm, rand_init_delta
 from .interaction_loss import (InteractionLoss, get_features,
                                sample_for_interaction)
@@ -42,6 +47,28 @@ def transition_invariant_conv(size=15):
     return conv
 
 
+def input_diversity(input_tensor,image_width,image_resize,prob):
+    if prob > 0.0:
+        rnd = randint(image_width,image_resize)
+        rescaled = transforms.Resize([rnd, rnd],interpolation=Image.NEAREST)(input_tensor)
+        h_rem = image_resize - rnd
+        w_rem = image_resize - rnd
+        pad_top = randint(0, h_rem)
+        pad_bottom = h_rem - pad_top
+        pad_left = randint(0, w_rem)
+        pad_right = w_rem - pad_left
+        # 要看一下padded的维度来验证  left, top, right and bottom
+        padded = transforms.Pad([pad_left, pad_top,pad_right, pad_bottom])(rescaled)
+
+        # padded.set_shape((input_tensor.shape[0], image_resize, image_resize, 3))
+        rnd_prob = randint(0,100)/100.0
+        if rnd_prob < prob:
+            return padded
+        else:
+            return input_tensor
+    else:
+        return input_tensor
+
 class ProjectionAttacker(object):
 
     def __init__(self,
@@ -61,6 +88,8 @@ class ProjectionAttacker(object):
                  lam=1,
                  m=0,
                  sigma=15,
+                 image_resize = 255,
+                 prob = 0.0,
                  rand_init=True):
         self.model = model
         self.epsilon = epsilon
@@ -79,6 +108,8 @@ class ProjectionAttacker(object):
         self.m = m
         self.sigma = sigma
         self.ord = ord
+        self.image_resize = image_resize
+        self.prob = prob
         self.rand_init = rand_init
         if loss_fn is None:
             self.loss_fn = nn.CrossEntropyLoss()
@@ -87,8 +118,8 @@ class ProjectionAttacker(object):
 
     def perturb(self, X, y):
         """
-        :param X_nat: a Float Tensor
-        :param y: a Long Tensor
+        :param X_nat: a Float Tensor  1,c,h,w  float32
+        :param y: a Long Tensor 1 int64
         :return:
         """
         loss_record = {'loss1': [], 'loss2': [], 'loss': []}
@@ -106,18 +137,26 @@ class ProjectionAttacker(object):
         noise_distribution = torch.distributions.normal.Normal(
                     torch.tensor([0.0]),
                     torch.tensor([self.sigma]).float())
+        # X_prev = X
+
+        # # DIM attack
+        # if self.prob >0:
+        #     X = input_diversity(X, self.image_width, self.image_resize, self.prob)
 
         for i in range(self.num_steps):
+            # # DI2 attack
+            X_prev = X + delta
+            X_DIM = input_diversity(X_prev, self.image_width, self.image_resize, self.prob)
             if self.m >= 1:  # Variance-reduced attack; https://arxiv.org/abs/1802.09707
                 noise_shape = list(X.shape)
                 noise_shape[0] = self.m
                 noise = noise_distribution.sample(noise_shape).squeeze() / 255
                 noise = noise.to(X.device)
-                outputs = self.model(X + delta + noise)
+                outputs = self.model(X_DIM + delta + noise)
 
                 loss1 = self.loss_fn(outputs, y.expand(self.m))
             else:
-                loss1 = self.loss_fn(self.model(X + delta), y)
+                loss1 = self.loss_fn(self.model(X_DIM), y)
 
             if self.targeted:
                 loss1 = -loss1
