@@ -18,6 +18,9 @@ def get_attacker(
     grid_scale,
     sample_grid_num,
     sample_times,
+    linbp_layer,
+    ila_layer,
+    ila_niters,
     momentum=0.,
     gamma=1.,
     lam=0.,
@@ -66,6 +69,7 @@ def get_attacker(
                 'You can extend this code to other architectures.')
 
     adversary = ProjectionAttacker(
+        attack_method = attack_method,
         model=predict,
         epsilon=epsilon,
         num_steps=num_steps,
@@ -83,5 +87,9 @@ def get_attacker(
         sigma=sigma,
         image_resize =image_resize,
         prob = prob,
-        ord=p)
+        ord=p,
+        linbp_layer = linbp_layer,
+        ila_layer = ila_layer,
+        ila_niters = ila_niters,
+    )
     return adversary
