@@ -19,7 +19,7 @@ parser.add_argument("--arch", type=str, default='resnet50')
 parser.add_argument(
     "--target_archs", type=str, default=['densenet201'], nargs='*')
 
-parser.add_argument("--attack_method", type=str, default='PGD')
+parser.add_argument("--attack_method", type=str, default='PGD+linbp')
 parser.add_argument("--gamma", type=float, default=1.)
 parser.add_argument("--momentum", type=float, default=0.)
 parser.add_argument("--m", type=int, default=0)
@@ -31,6 +31,9 @@ parser.add_argument("--sample_grid_num", type=int, default=32)
 parser.add_argument("--sample_times", type=int, default=32)
 parser.add_argument("--image_resize", type=int, default=255)
 parser.add_argument("--prob", type=float, default=0.)
+parser.add_argument('--linbp_layer', type=str, default='3_1')
+parser.add_argument('--ila_layer', type=str, default='2_3')
+parser.add_argument('--ila_niters', type=int, default=100)
 args = parser.parse_args()
 
 target_archs = [
