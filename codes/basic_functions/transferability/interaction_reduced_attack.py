@@ -53,6 +53,9 @@ def generate_adv_images(args):
         sample_times=args.sample_times,
         image_resize = args.image_resize,
         prob = args.prob,
+        linbp_layer = args.linbp_layer,
+        ila_layer = args.ila_layer,
+        ila_niters = args.ila_niters,
     )
 
     save_root = args.adv_image_root
@@ -72,14 +75,22 @@ def generate_adv_images(args):
             if label.item() != pred:
                 raise Exception('Invalid prediction')
 
-        advs, loss_record_i = adversary.perturb(
-            ori_image,
-            torch.tensor([label]).to(device),
-        )
+        if ('linbp' in args.attack_method or 'ila' in args.attack_method):
+            advs, loss_record_i = adversary.perturb_linbp_ila(
+                ori_image,
+                torch.tensor([label]).to(device),
+            )
+        else:
+            advs, loss_record_i = adversary.perturb(
+                ori_image,
+                torch.tensor([label]).to(device),
+            )
+
+        advs_len = len(advs)
 
         advs = advs.detach().cpu().numpy()
         file_name = file_names[0]
-        for epoch in range(args.num_steps):
+        for epoch in range(advs_len):
             epoch_save_root = os.path.join(save_root, f'epoch_{epoch}')
             save_images(
                 images=advs[epoch:epoch + 1, :, :, :],
